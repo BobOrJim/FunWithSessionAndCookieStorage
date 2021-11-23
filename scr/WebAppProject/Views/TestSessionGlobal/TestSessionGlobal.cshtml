@@ -1,0 +1,23 @@
+﻿@model WebAppProject.ViewModels.StorageViewModel
+
+
+<br />
+<br />
+
+
+<p>Offcourse session storage is global, im to paranoid.</p>
+
+
+<br />
+<br />
+
+
+<p>@Model.StringStorage</p>
+
+
+<form asp-controller="Storage" asp-action="AddTextSession" method="post">
+    Name <br /> <input asp-for="StringStorage" /><br />
+    <button type="submit">Add text</button>
+</form>
+
+
