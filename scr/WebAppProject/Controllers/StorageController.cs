@@ -29,33 +29,36 @@ namespace WebAppProject.Controllers
             string TextToAdd = storageViewModel.StringStorage;
 
             //Load Session
-            string sessionString = HttpContext.Session.GetString(ReadCookie("user.cookie"));
-            if (!String.IsNullOrEmpty(sessionString))
-            {
-                storageViewModel = JsonSerializer.Deserialize<StorageViewModel>(sessionString);
-            }
+            StorageViewModel newStorageViewModel = LoadSessionStorage(storageViewModel);
             //Append text
-            storageViewModel.StringStorage += TextToAdd;
+            newStorageViewModel.StringStorage += TextToAdd;
             //Save Session
-            HttpContext.Session.SetString(ReadCookie("user.cookie"), JsonSerializer.Serialize(storageViewModel));
-            return View("Storage", storageViewModel);
+            if (HttpContext.Request.Cookies.ContainsKey("user.cookie"))
+            {
+                HttpContext.Session.SetString(ReadCookie("user.cookie"), JsonSerializer.Serialize(newStorageViewModel));
+            }
+            return View("Storage", newStorageViewModel);
+        }
+
+        public StorageViewModel LoadSessionStorage(StorageViewModel storageViewModel)
+        {
+            //Load SessionStorage using Id in cookie.
+            if (HttpContext.Request.Cookies.ContainsKey("user.cookie"))
+            {
+                string sessionKey = ReadCookie("user.cookie");
+                string sessionString = HttpContext.Session.GetString(sessionKey);
+                if (!String.IsNullOrEmpty(sessionString))
+                {
+                    storageViewModel = JsonSerializer.Deserialize<StorageViewModel>(sessionString);
+                }
+            }
+            return storageViewModel;
         }
 
         [HttpGet]
         public IActionResult LoadTextSession(StorageViewModel storageViewModel)
         {
-            //Load Session
-            if (HttpContext.Session.["user.cookie"] != null)
-            {
-                string sessionKey = ReadCookie("user.cookie");
-            }
-
-            string sessionString = HttpContext.Session.GetString(sessionKey);
-            if (!String.IsNullOrEmpty(sessionString))
-            {
-                storageViewModel = JsonSerializer.Deserialize<StorageViewModel>(sessionString);
-            }
-            return View("Storage", storageViewModel);
+            return View("Storage", LoadSessionStorage(storageViewModel));
         }
 
         //This will be another microservice in h-pax
@@ -71,7 +74,7 @@ namespace WebAppProject.Controllers
         {
             // string cookieValueFromContext = HttpContext.Request.Cookies["key"];
             // string cookieValueFromReq = Request.Cookies["Key"];
-            Debug.WriteLine($"Value in cookie {ReadCookie("user.cookie")}");
+            //Debug.WriteLine($"Value in cookie {ReadCookie("user.cookie")}");
             return Request.Cookies[key];
         }
 
@@ -80,8 +83,8 @@ namespace WebAppProject.Controllers
             CookieOptions option = new CookieOptions()
             {
                 Path = "/",
-                HttpOnly = false, //prevent client-side JS from accessing the cookie vlaue
-                Secure = false, //allow the cookie to be served/received over HTTPS
+                HttpOnly = false, //True = prevent client-side JS from accessing the cookie vlaue
+                Secure = false, //True = only HTTPS
                 Expires = DateTime.Now.AddMinutes(10)
             };
 
